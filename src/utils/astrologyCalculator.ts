@@ -696,7 +696,7 @@ export function calculateDestiny(
   // [NEW] 연애운 및 이상형 분석 계산 영역
   // ----------------------------------------------------
   const spousePalaceIdx = (lifePalaceIdx - 2 + 12) % 12;
-  const spousePalace = palaceZhis[spousePalaceIdx];
+  // const spousePalace = palaceZhis[spousePalaceIdx];
 
   const spouseStarsMap: Record<string, string> = {
     '甲': '태양(太陽) - 활기차고 의리 넘치며 주변을 따뜻하게 밝혀주는 당당한 사람',
