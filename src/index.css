@@ -1,18 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 
 :root {
-  --color-bg: #070a13;
-  --color-card-bg: rgba(15, 23, 42, 0.65);
-  --color-primary: #0f172a;
-  --color-accent: #d97706; /* Gold */
-  --color-accent-light: #fbbf24;
+  --color-bg: #0a0514;
+  --color-card-bg: rgba(255, 255, 255, 0.04);
+  --color-primary: #1e1b4b;
+  --color-accent: #ec4899; /* Neon Pink */
+  --color-accent-light: #fbcfe8;
+  --color-accent-secondary: #8b5cf6; /* Neon Purple */
   --color-text: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --color-border: rgba(217, 119, 6, 0.15);
-  --color-border-active: rgba(251, 191, 36, 0.5);
+  --color-text-muted: #cbd5e1;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-active: rgba(236, 72, 153, 0.5);
   --font-family: 'Outfit', 'Noto Sans KR', sans-serif;
   --box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.6);
-  --backdrop-filter: blur(16px);
+  --backdrop-filter: blur(24px);
 }
 
 * {
@@ -24,9 +25,9 @@
 body {
   background-color: var(--color-bg);
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(15, 23, 42, 0.8) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(217, 119, 6, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(30, 41, 59, 0.5) 0%, transparent 60%);
+    radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.2) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
   color: var(--color-text);
   font-family: var(--font-family);
   min-height: 100vh;
@@ -60,8 +61,8 @@ body {
 }
 
 .glass-card:hover {
-  border-color: rgba(217, 119, 6, 0.3);
-  box-shadow: 0 12px 50px 0 rgba(217, 119, 6, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 50px 0 rgba(236, 72, 153, 0.1);
 }
 
 /* Typography */
@@ -72,7 +73,7 @@ h1 {
   margin-bottom: 8px;
   color: #ffffff;
   letter-spacing: -0.025em;
-  background: linear-gradient(135deg, #ffffff 60%, var(--color-accent-light));
+  background: linear-gradient(135deg, #ffffff 40%, var(--color-accent-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -129,8 +130,8 @@ p {
 .form-control:focus {
   outline: none;
   border-color: var(--color-border-active);
-  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
-  background: rgba(7, 10, 19, 0.8);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+  background: rgba(10, 5, 20, 0.8);
 }
 
 /* Custom Select wrapper */
@@ -161,9 +162,9 @@ p {
 }
 
 .toggle-btn.active {
-  background: var(--color-accent);
+  background: linear-gradient(135deg, var(--color-accent), var(--color-accent-secondary));
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
 }
 
 /* Grid Layout */
@@ -180,12 +181,12 @@ p {
   font-size: 1.1rem;
   font-weight: 600;
   font-family: var(--font-family);
-  background: linear-gradient(135deg, var(--color-accent) 0%, #b45309 100%);
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-secondary) 100%);
   border: none;
   border-radius: 14px;
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(217, 119, 6, 0.25);
+  box-shadow: 0 4px 20px rgba(236, 72, 153, 0.3);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   justify-content: center;
@@ -195,8 +196,8 @@ p {
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(217, 119, 6, 0.4);
-  background: linear-gradient(135deg, #f59e0b 0%, var(--color-accent) 100%);
+  box-shadow: 0 6px 24px rgba(236, 72, 153, 0.5);
+  background: linear-gradient(135deg, #f472b6 0%, #a78bfa 100%);
 }
 
 .btn-primary:active {
@@ -259,7 +260,7 @@ p {
   right: 3px;
   bottom: 3px;
   border-radius: 50%;
-  border: 1px dashed rgba(251, 191, 36, 0.3);
+  border: 1px dashed rgba(236, 72, 153, 0.4);
 }
 
 .emblem-ring svg {
@@ -441,7 +442,7 @@ p {
 }
 
 .cta-box {
-  background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(10, 5, 20, 0.8) 100%);
   border: 1px dashed var(--color-accent);
   border-radius: 16px;
   padding: 20px;

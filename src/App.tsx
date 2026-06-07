@@ -7,6 +7,7 @@ import { generatePDFReport } from './utils/pdfGenerator';
 interface CustomerDBItem {
   name: string;
   email: string;
+  gender?: 'M' | 'F';
   birthDate: string;
   parsedDate: string;
 }
@@ -28,6 +29,7 @@ function App() {
 
   // 입력 폼 상태
   const [name, setName] = useState('');
+  const [gender, setGender] = useState<'M' | 'F'>('F');
   const [birthYear, setBirthYear] = useState(1995);
   const [birthMonth, setBirthMonth] = useState(1);
   const [birthDay, setBirthDay] = useState(1);
@@ -66,13 +68,33 @@ function App() {
       }
     }
 
-    // 2. 생년월일 추출 (띄어쓰기, 한글, 점, 대시 등 유연 매칭)
-    // 예: "1989 06 26", "1989.6.26", "1989년 6월 26일"
+    // 1.5. 성별 추출
+    const genderMatch = rawText.match(/성별\s*:\s*(남|여)/);
+    if (genderMatch) {
+      setGender(genderMatch[1] === '남' ? 'M' : 'F');
+    } else if (rawText.match(/(^|\s)(남|남자)($|\s)/)) {
+      setGender('M');
+    } else if (rawText.match(/(^|\s)(여|여자)($|\s)/)) {
+      setGender('F');
+    } else {
+      setGender('F'); // 기본값
+    }
+
+    // 2. 생년월일 추출 (띄어쓰기, 한글, 점, 대시 등 유연 매칭 + 8자리 연속 숫자 매칭)
     const ymdMatch = rawText.match(/(\d{4})\s*[\s년\-./]\s*(\d{1,2})\s*[\s월\-./]\s*(\d{1,2})/);
+    const compactYmdMatch = rawText.match(/(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/); // 예: 19840123
+    
     if (ymdMatch) {
       setBirthYear(Number(ymdMatch[1]));
       setBirthMonth(Number(ymdMatch[2]));
       setBirthDay(Number(ymdMatch[3]));
+    } else if (compactYmdMatch) {
+      const year = Number(compactYmdMatch[0].substring(0, 4));
+      const month = Number(compactYmdMatch[0].substring(4, 6));
+      const day = Number(compactYmdMatch[0].substring(6, 8));
+      setBirthYear(year);
+      setBirthMonth(month);
+      setBirthDay(day);
     }
 
     // 3. 양력/음력 추출 (전체 본문 검색)
@@ -145,7 +167,7 @@ function App() {
     label: `${String(i).padStart(2, '0')}:00 (${i < 12 ? '오전' : '오후'} ${i === 0 || i === 12 ? 12 : i % 12}시)`
   }));
 
-  const saveCustomerToDB = (customerName: string, customerEmail: string, year: number, month: number, day: number) => {
+  const saveCustomerToDB = (customerName: string, customerEmail: string, customerGender: 'M' | 'F', year: number, month: number, day: number) => {
     try {
       const rawDB = localStorage.getItem('fortune_customer_db');
       const db: CustomerDBItem[] = rawDB ? JSON.parse(rawDB) : [];
@@ -158,6 +180,7 @@ function App() {
       const newItem: CustomerDBItem = {
         name: customerName,
         email: customerEmail,
+        gender: customerGender,
         birthDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         parsedDate: new Date().toLocaleString('ko-KR')
       };
@@ -185,9 +208,9 @@ function App() {
       const day = birthDay;
 
       try {
-        const destinyResult = calculateDestiny(name, year, month, day, birthHour, isLunar);
+        const destinyResult = calculateDestiny(name, gender, year, month, day, birthHour, isLunar);
         setResult(destinyResult);
-        saveCustomerToDB(name, email, year, month, day); // 성공 시 DB 자동 누적
+        saveCustomerToDB(name, email, gender, year, month, day); // 성공 시 DB 자동 누적
         setStep('result');
       } catch (err) {
         console.error(err);
@@ -221,12 +244,13 @@ function App() {
       }
       
       let csvContent = '\uFEFF'; // 한글 깨짐 방지 UTF-8 BOM
-      csvContent += '이름,이메일,생년월일,수집일시\n';
+      csvContent += '이름,성별,이메일,생년월일,수집일시\n';
       
       db.forEach(item => {
         const nameClean = item.name.replace(/"/g, '""');
         const emailClean = item.email.replace(/"/g, '""');
-        csvContent += `"${nameClean}","${emailClean}","${item.birthDate}","${item.parsedDate}"\n`;
+        const genderStr = item.gender === 'M' ? '남' : (item.gender === 'F' ? '여' : '미상');
+        csvContent += `"${nameClean}","${genderStr}","${emailClean}","${item.birthDate}","${item.parsedDate}"\n`;
       });
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -250,19 +274,38 @@ function App() {
     }
   };
 
-  const handleCopyDMText = () => {
-    if (!result) return;
+  const handleCopyRequestForm = () => {
+    const formText = `👇 [DM 신청 양식]
+────────────────
+1. 성함 : 
+2. 성별 : (남 / 여)
+3. 생년월일 : (예: 1990년 1월 1일)
+4. 양력/음력 : (양력 / 음력 평달 / 음력 윤달)
+5. 태어난 시간 : (예: 오후 2시 30분 / 모르면 '모름')
+6. 이메일 : (상세 리포트 받을 주소)
+────────────────
+※ 남겨주신 정보는 운세 분석 및 결과(PDF) 발송 용도로만 사용되며 안전하게 폐기됩니다. 양식 제출 시 동의하신 것으로 간주합니다.`;
+
+    navigator.clipboard.writeText(formText)
+      .then(() => {
+        alert('신청 양식이 클립보드에 복사되었습니다. 인스타 릴스 캡션이나 DM 폼에 붙여넣기(Ctrl+V) 하세요.');
+      })
+      .catch((err) => {
+        console.error('클립보드 복사 실패:', err);
+        alert('복사에 실패했습니다. 수동으로 복사해 주세요.');
+      });
+  };
+
+  const getDMPartText = (part: number) => {
+    if (!result) return '';
     
-    // 이사 방향 텍스트 정제 (한자어 제거 및 순화)
     const luckyDir = result.fengShui.luckyDirections.map(d => d.replace(/반안살 대길 방위/g, '나를 성공으로 이끄는 최고의 대길 방향')).join(', ');
     const badDir = (result.fengShui.badDirections[0] || '북쪽')
       .replace(/삼살\/대장군/g, '자연의 나쁜 기운인 삼살/대장군 방위')
       .replace(/저촉/g, '피하기');
     
-    // 풍수 인테리어 팁들을 불릿 기호와 함께 문자열로 조립
     const interiorTips = result.western.tips.map(tip => `   • ${tip}`).join('\n');
     
-    // 어려운 한자어 순화 처리
     const purePersonality = result.analysis.personality
       .replace(/일간/g, '타고난 나만의 기운')
       .replace(/명조/g, '사주 흐름');
@@ -295,64 +338,76 @@ function App() {
       .replace(/액운/g, '나쁜 기운')
       .replace(/세운/g, '올해의 운');
 
-    const dmText = `🔮 **${result.name}님의 ${result.currentMonth}월 동서양 통합 운세 분석 보고서** 🔮
+    if (part === 1) {
+      return `🔮 **${result.name}님의 ${result.currentMonth}월 운세 분석 보고서 (1/3)** 🔮
 
-안녕하세요, ${result.name}님! 요청하신 ${result.currentMonth}월 사주, 자미두수, 점성술 융합 분석 결과입니다. 길고 구체적이니 천천히 읽어보세요. 😊
+안녕하세요, ${result.name}님! 사주, 자미두수, 점성술 융합 분석 결과입니다.
+인스타그램 DM 글자 수 제한으로 인해 3번으로 나누어 보내드립니다. 😊
 
 ──────────────────────
-
 ### 1. 🌲 타고난 사주 성향 및 자아 유형
-* **나의 영혼 기운 (사주 일주)**: ${result.saju.dayPillar.ganKr}${result.saju.dayPillar.zhiKr}일주 (${result.saju.dayMasterElement.name}의 기운)
+* **나의 영혼 기운**: ${result.saju.dayPillar.ganKr}${result.saju.dayPillar.zhiKr}일주 (${result.saju.dayMasterElement.name}의 기운)
 * **타고난 성격 특징**: 
   ${purePersonality}
 
 ──────────────────────
-
 ### 💰 2. 타고난 재물운 & 돈 관리 스타일
 * **평생 재물운 지수**: ${result.scores.wealthLuck}점
 * **나의 재물운 해설**: 
-  ${pureWealth}
+  ${pureWealth}`;
+    }
+
+    if (part === 2) {
+      return `🔮 **${result.name}님의 운세 분석 보고서 (2/3)** 🔮
 
 ──────────────────────
-
-### 🔮 3. 자미두수 평생 돈 그릇 (재물 수호궁) 분석
+### 🔮 3. 자미두수 평생 돈 그릇 분석
 * **나의 평생 돈 그릇 위치**: ${result.ziWei.wealthPalace}
 * **돈을 벌고 쓰는 성향**: 
   ${pureWealthDesc}
 
 ──────────────────────
-
-### 💖 4. [보너스] 이달의 연애 매력 & 끌리는 이상형
+### 💖 4. 이달의 연애 매력 & 이상형
 * **연애 매력 지수**: ${result.romance?.romanceScore ?? 0}점
 * **나의 연애 스타일**: ${result.romance?.loveStyle ?? ''}
-* **자미두수가 말하는 나의 이상형**: ${result.romance?.idealPartner ?? ''}
-* **연애운을 높여주는 행운의 아이템/데이트 팁**: ${result.romance?.luckyRomanceItem ?? ''}
+* **자미두수 이상형**: ${result.romance?.idealPartner ?? ''}
+* **행운의 아이템/데이트**: ${result.romance?.luckyRomanceItem ?? ''}`;
+    }
+
+    if (part === 3) {
+      return `🔮 **${result.name}님의 운세 분석 보고서 (3/3)** 🔮
 
 ──────────────────────
-
-### 🧭 5. [보너스] 나를 돕는 풍수 이사 방향 & 공간 조언
-* **나의 부동산 복 (자미두수 전택궁)**: 
+### 🧭 5. 나를 돕는 풍수 이사 방향 & 공간 조언
+* **부동산 복 (자미두수)**: 
   ${purePropertyDesc}
-* **이달의 부동산 문서(계약/합격)운**: 
+* **이달의 부동산 문서(계약)운**: 
   ${pureDocumentText}
-* **나에게 행운을 주는 주거 스타일**: ${result.western.homeStyle}
+* **행운의 주거 스타일**: ${result.western.homeStyle}
 * **행운의 인테리어 색상**: ${result.western.interiorColor}
-* **이동하기 좋은 행운의 방향**: ${luckyDir}
-* **조심해서 피해야 할 방향**: ${badDir}
-* **나의 일상 풍수 조언**:
+* **이동하기 좋은 방향**: ${luckyDir}
+* **조심할 방향**: ${badDir}
+* **일상 풍수 조언**:
 ${interiorTips}
 
 ──────────────────────
+✉️ 모든 분석이 끝났습니다! 결과에 대해 궁금한 점이 있다면 언제든 답장 남겨주세요 💬`;
+    }
 
-✉️ 분석 결과에 대해 더 궁금한 점이 있거나 흥미로운 부분이 있다면 언제든 이 DM으로 답장 남겨주세요! 편하게 소통해요 💬`;
+    return '';
+  };
 
-    navigator.clipboard.writeText(dmText)
+  const handleCopyDMPart = (part: number) => {
+    const text = getDMPartText(part);
+    if (!text) return;
+
+    navigator.clipboard.writeText(text)
       .then(() => {
-        alert('인스타 DM용 장문 분석 텍스트가 클립보드에 복사되었습니다! 인스타 DM 창에 붙여넣기(Ctrl+V) 하세요.');
+        alert(`[파트 ${part}]가 복사되었습니다! 인스타 DM에 붙여넣기 후 다음 파트를 복사하세요.`);
       })
       .catch((err) => {
         console.error('클립보드 복사 실패:', err);
-        alert('복사에 실패했습니다. 수동으로 복사해 주세요.');
+        alert('복사에 실패했습니다.');
       });
   };
 
@@ -383,6 +438,15 @@ ${interiorTips}
           <p style={{ textAlign: 'center', marginBottom: '16px', fontSize: '0.85rem' }}>
             생년월일시로 알아보는 나만의 실시간 부동산 문서운 · 이사방향 · 풍수 리포트
           </p>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleCopyRequestForm}
+            style={{ marginBottom: '24px', fontSize: '0.85rem', padding: '12px', background: 'rgba(236, 72, 153, 0.1)', color: '#fbcfe8', border: '1px dashed rgba(236, 72, 153, 0.4)', borderRadius: '12px' }}
+          >
+            📋 릴스/인스타용 DM 신청 양식 복사하기
+          </button>
 
           {/* 입력 방식 전환 탭 */}
           <div className="toggle-group" style={{ marginBottom: '24px', gridTemplateColumns: '1fr 1fr' }}>
@@ -457,6 +521,26 @@ ${interiorTips}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="form-group">
+              <label>성별</label>
+              <div className="toggle-group" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <button
+                  type="button"
+                  className={`toggle-btn ${gender === 'F' ? 'active' : ''}`}
+                  onClick={() => setGender('F')}
+                >
+                  여성 (Female)
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-btn ${gender === 'M' ? 'active' : ''}`}
+                  onClick={() => setGender('M')}
+                >
+                  남성 (Male)
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
@@ -773,17 +857,23 @@ ${interiorTips}
 
               <div className="dm-copy-hint">
                 <span className="dm-copy-hint-dot" />
-                총 5개 섹션 · 풍수 인테리어 팁 · 자미두수 분석 포함된 장문 텍스트
+                인스타 DM 제한에 걸리지 않도록 3파트로 나뉘어 있습니다. 순서대로 복사 후 전송하세요.
               </div>
 
-              <button 
-                onClick={handleCopyDMText} 
-                className="dm-copy-btn"
-              >
-                <Copy size={18} />
-                <span>인스타 DM용 장문 분석 전문 복사</span>
-                <span className="dm-copy-arrow">→</span>
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button onClick={() => handleCopyDMPart(1)} className="dm-copy-btn" style={{ background: 'rgba(236, 72, 153, 0.1)', border: '1px solid #fbcfe8' }}>
+                  <Copy size={16} style={{ marginRight: '6px' }} />
+                  <span>[파트 1] 사주 성향 & 재물운 복사</span>
+                </button>
+                <button onClick={() => handleCopyDMPart(2)} className="dm-copy-btn" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid #bfdbfe' }}>
+                  <Copy size={16} style={{ marginRight: '6px' }} />
+                  <span>[파트 2] 자미두수 & 연애운 복사</span>
+                </button>
+                <button onClick={() => handleCopyDMPart(3)} className="dm-copy-btn" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid #a7f3d0' }}>
+                  <Copy size={16} style={{ marginRight: '6px' }} />
+                  <span>[파트 3] 풍수지리 & 이사방향 복사</span>
+                </button>
+              </div>
             </div>
           </div>
 

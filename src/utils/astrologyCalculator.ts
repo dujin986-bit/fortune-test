@@ -20,6 +20,7 @@ export interface Pillar {
 
 export interface DestinyResult {
   name: string;
+  gender: 'M' | 'F';
   birthDateStr: string;
   isLunar: boolean;
   currentYear: number;
@@ -182,6 +183,7 @@ function getBranchMainStem(zhi: string): string {
 
 export function calculateDestiny(
   name: string,
+  gender: 'M' | 'F',
   year: number,
   month: number,
   day: number,
@@ -753,6 +755,7 @@ export function calculateDestiny(
 
   const result: DestinyResult = {
     name,
+    gender,
     birthDateStr: `${solar.getYear()}-${String(solar.getMonth()).padStart(2, '0')}-${String(solar.getDay()).padStart(2, '0')}`,
     isLunar,
     currentYear,

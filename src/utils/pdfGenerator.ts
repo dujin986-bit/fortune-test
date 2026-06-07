@@ -152,7 +152,7 @@ export async function generatePDFReport(result: DestinyResult, creatorInfo: {
   doc.setTextColor(colors.primary[0], colors.primary[1], colors.primary[2]);
   
   let currentY = infoBoxY + 12;
-  doc.text(`분 석 대 상 자 :   ${result.name} 님 (${result.currentMonth}월 운세)`, margin + 25, currentY);
+  doc.text(`분 석 대 상 자 :   ${result.name} 님 (${result.gender === 'M' ? '남성' : '여성'}, ${result.currentMonth}월 운세)`, margin + 25, currentY);
   currentY += 10;
   doc.text(`양 력 생 년 월 일 :   ${result.birthDateStr}`, margin + 25, currentY);
   currentY += 10;
