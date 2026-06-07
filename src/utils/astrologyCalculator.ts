@@ -695,7 +695,7 @@ export function calculateDestiny(
   // ----------------------------------------------------
   // [NEW] 연애운 및 이상형 분석 계산 영역
   // ----------------------------------------------------
-  const spousePalaceIdx = (lifePalaceIdx - 2 + 12) % 12;
+  // const spousePalaceIdx = (lifePalaceIdx - 2 + 12) % 12;
   // const spousePalace = palaceZhis[spousePalaceIdx];
 
   const spouseStarsMap: Record<string, string> = {
