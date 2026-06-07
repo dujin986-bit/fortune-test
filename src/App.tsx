@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Compass, Sparkles, Download, MessageSquare, ArrowRight, RefreshCw, Copy } from 'lucide-react';
 import { calculateDestiny } from './utils/astrologyCalculator';
 import type { DestinyResult } from './utils/astrologyCalculator';
