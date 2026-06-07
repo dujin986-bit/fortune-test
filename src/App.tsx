@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Compass, Sparkles, Download, MessageSquare, ArrowRight, RefreshCw, Copy } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Compass, Sparkles, Download, MessageSquare, ArrowRight, RefreshCw, Copy, Camera } from 'lucide-react';
 import { calculateDestiny } from './utils/astrologyCalculator';
 import type { DestinyResult } from './utils/astrologyCalculator';
 import { generatePDFReport } from './utils/pdfGenerator';
-
+import ReelsThumbnail from './components/ReelsThumbnail';
+import html2canvas from 'html2canvas';
 interface CustomerDBItem {
   name: string;
-  email: string;
   gender?: 'M' | 'F';
   birthDate: string;
   parsedDate: string;
@@ -35,7 +35,6 @@ function App() {
   const [birthDay, setBirthDay] = useState(1);
   const [birthHour, setBirthHour] = useState(12);
   const [isLunar, setIsLunar] = useState(false);
-  const [email, setEmail] = useState('');
   const [consent, setConsent] = useState(false);
 
   // DM 텍스트 파싱 및 폼 채우기 함수
@@ -54,9 +53,8 @@ function App() {
     } else if (lines.length > 0) {
       const firstLine = lines[0];
       const isDate = firstLine.match(/\d{4}/);
-      const isEmail = firstLine.includes('@');
       const isType = firstLine.includes('양력') || firstLine.includes('음력');
-      if (!isDate && !isEmail && !isType && firstLine.length < 10) {
+      if (!isDate && !isType && firstLine.length < 10) {
         // 숫자나 기호를 제거하고 남은 텍스트를 이름으로 채택
         const cleanName = firstLine
           .replace(/[0-9.]/g, '')
@@ -104,12 +102,6 @@ function App() {
       setIsLunar(true);
     } else {
       setIsLunar(false); // 기본값 양력
-    }
-
-    // 4. 이메일 주소 추출 (전체 본문 검색)
-    const emailMatch = rawText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-    if (emailMatch) {
-      setEmail(emailMatch[1].trim());
     }
 
     // 5. 태어난 시간 추출 (접두사가 없어도 시간 정보 행 추적)
@@ -160,6 +152,8 @@ function App() {
   // 결과 상태
   const [result, setResult] = useState<DestinyResult | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [thumbnailLoading, setThumbnailLoading] = useState(false);
+  const thumbnailRef = useRef<HTMLDivElement>(null);
 
   // 시간 목록 (시주 계산용)
   const HOURS = Array.from({ length: 24 }, (_, i) => ({
@@ -167,19 +161,13 @@ function App() {
     label: `${String(i).padStart(2, '0')}:00 (${i < 12 ? '오전' : '오후'} ${i === 0 || i === 12 ? 12 : i % 12}시)`
   }));
 
-  const saveCustomerToDB = (customerName: string, customerEmail: string, customerGender: 'M' | 'F', year: number, month: number, day: number) => {
+  const saveCustomerToDB = (customerName: string, customerGender: 'M' | 'F', year: number, month: number, day: number) => {
     try {
       const rawDB = localStorage.getItem('fortune_customer_db');
       const db: CustomerDBItem[] = rawDB ? JSON.parse(rawDB) : [];
-      
-      // 동일한 이메일이 이미 수집되었다면 중복 적재 방지
-      if (db.some(item => item.email.toLowerCase() === customerEmail.toLowerCase())) {
-        return;
-      }
 
       const newItem: CustomerDBItem = {
         name: customerName,
-        email: customerEmail,
         gender: customerGender,
         birthDate: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         parsedDate: new Date().toLocaleString('ko-KR')
@@ -194,7 +182,7 @@ function App() {
 
   const handleStartAnalysis = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !consent) {
+    if (!name || !consent) {
       alert('모든 정보를 기입하시고 개인정보 수집에 동의해 주세요.');
       return;
     }
@@ -210,7 +198,7 @@ function App() {
       try {
         const destinyResult = calculateDestiny(name, gender, year, month, day, birthHour, isLunar);
         setResult(destinyResult);
-        saveCustomerToDB(name, email, gender, year, month, day); // 성공 시 DB 자동 누적
+        saveCustomerToDB(name, gender, year, month, day); // 성공 시 DB 자동 누적
         setStep('result');
       } catch (err) {
         console.error(err);
@@ -233,31 +221,54 @@ function App() {
     }
   };
 
+  const handleDownloadThumbnail = async () => {
+    if (!thumbnailRef.current) return;
+    setThumbnailLoading(true);
+
+    try {
+      const canvas = await html2canvas(thumbnailRef.current, {
+        scale: 2, // 고해상도 지원
+        useCORS: true,
+        backgroundColor: null,
+      });
+      
+      const image = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.download = `${result?.name}_6월_문서운_릴스_썸네일.png`;
+      link.href = image;
+      link.click();
+    } catch (err) {
+      console.error('썸네일 생성 실패:', err);
+      alert('썸네일 이미지 생성 중 오류가 발생했습니다.');
+    } finally {
+      setThumbnailLoading(false);
+    }
+  };
+
   const handleDownloadCSV = () => {
     try {
       const rawDB = localStorage.getItem('fortune_customer_db');
       const db: CustomerDBItem[] = rawDB ? JSON.parse(rawDB) : [];
       
       if (db.length === 0) {
-        alert('수집된 이메일 DB가 아직 없습니다.');
+        alert('수집된 DB가 아직 없습니다.');
         return;
       }
       
       let csvContent = '\uFEFF'; // 한글 깨짐 방지 UTF-8 BOM
-      csvContent += '이름,성별,이메일,생년월일,수집일시\n';
+      csvContent += '이름,성별,생년월일,수집일시\n';
       
       db.forEach(item => {
         const nameClean = item.name.replace(/"/g, '""');
-        const emailClean = item.email.replace(/"/g, '""');
         const genderStr = item.gender === 'M' ? '남' : (item.gender === 'F' ? '여' : '미상');
-        csvContent += `"${nameClean}","${genderStr}","${emailClean}","${item.birthDate}","${item.parsedDate}"\n`;
+        csvContent += `"${nameClean}","${genderStr}","${item.birthDate}","${item.parsedDate}"\n`;
       });
       
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `수집이메일_DB_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.setAttribute('download', `수집DB_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -268,7 +279,7 @@ function App() {
   };
 
   const handleClearDB = () => {
-    if (window.confirm('정말 수집된 모든 이메일 DB를 삭제하시겠습니까? 복구할 수 없습니다.')) {
+    if (window.confirm('정말 수집된 모든 DB를 삭제하시겠습니까? 복구할 수 없습니다.')) {
       localStorage.removeItem('fortune_customer_db');
       alert('DB가 성공적으로 초기화되었습니다.');
     }
@@ -282,9 +293,8 @@ function App() {
 3. 생년월일 : (예: 1990년 1월 1일)
 4. 양력/음력 : (양력 / 음력 평달 / 음력 윤달)
 5. 태어난 시간 : (예: 오후 2시 30분 / 모르면 '모름')
-6. 이메일 : (상세 리포트 받을 주소)
 ────────────────
-※ 남겨주신 정보는 운세 분석 및 결과(PDF) 발송 용도로만 사용되며 안전하게 폐기됩니다. 양식 제출 시 동의하신 것으로 간주합니다.`;
+※ 남겨주신 정보는 운세 분석 용도로만 사용되며 안전하게 폐기됩니다. 양식 제출 시 동의하신 것으로 간주합니다.`;
 
     navigator.clipboard.writeText(formText)
       .then(() => {
@@ -418,7 +428,6 @@ ${interiorTips}
     setBirthDay(1);
     setBirthHour(12);
     setIsLunar(false);
-    setEmail('');
     setConsent(false);
     setResult(null);
     setStep('input');
@@ -476,7 +485,7 @@ ${interiorTips}
               <textarea
                 className="form-control"
                 style={{ width: '100%', height: '120px', fontSize: '0.8rem', resize: 'vertical', fontFamily: 'monospace', padding: '10px', background: 'rgba(15, 23, 42, 0.6)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: '10px' }}
-                placeholder={`[예시 양식 복사 적용]&#10;1. 이름: 홍길동&#10;2. 생년월일: 1995년 5월 12일&#10;3. 양력 / 음력 선택: 양력&#10;4. 태어난 시간: 오후 2시&#10;5. 리포트를 수령할 이메일 주소: name@email.com`}
+                placeholder={`[예시 양식 복사 적용]&#10;1. 이름: 홍길동&#10;2. 생년월일: 1995년 5월 12일&#10;3. 양력 / 음력 선택: 양력&#10;4. 태어난 시간: 오후 2시`}
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
               />
@@ -541,23 +550,6 @@ ${interiorTips}
                   남성 (Male)
                 </button>
               </div>
-            </div>
-
-            <div className="form-group">
-              <label>이메일 주소 (PDF 리포트 수령용)</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="example@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <p style={{ fontSize: '0.75rem', marginTop: '4px' }}>
-                * 분석 결과 PDF 보고서가 다운로드되며 이메일로도 연동됩니다.
-              </p>
             </div>
 
             <div className="form-group">
@@ -633,9 +625,9 @@ ${interiorTips}
                 required
               />
               <label htmlFor="consent">
-                개인정보 수집 및 안내 이메일 발송 동의 (필수)<br />
+                개인정보 수집 동의 (필수)<br />
                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  생성된 사주 분석 리포트 다운로드 및 향후 새로운 운세 콘텐츠/업데이트 소식 이메일 수신에 동의합니다.
+                  입력하신 정보는 사주 분석 목적으로만 사용되며, 브라우저 로컬 저장소에 임시 보관 후 안전하게 삭제됩니다.
                 </span>
               </label>
             </div>
@@ -783,22 +775,43 @@ ${interiorTips}
               </p>
             </div>
 
-            <button 
-              onClick={handleDownloadPDF} 
-              className="btn-primary" 
-              disabled={pdfLoading}
-              style={{ padding: '14px 10px', fontSize: '1rem' }}
-            >
-              {pdfLoading ? (
-                <>
-                  <Compass className="animate-spin" size={18} /> 폰트 다운로드 및 PDF 생성 중...
-                </>
-              ) : (
-                <>
-                  <Download size={18} /> 상세 5p PDF 리포트 받기
-                </>
-              )}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={handleDownloadPDF} 
+                className="btn-primary" 
+                disabled={pdfLoading || thumbnailLoading}
+                style={{ padding: '14px 10px', fontSize: '1rem' }}
+              >
+                {pdfLoading ? (
+                  <>
+                    <Compass className="animate-spin" size={18} /> 폰트 다운로드 및 PDF 생성 중...
+                  </>
+                ) : (
+                  <>
+                    <Download size={18} /> 상세 5p PDF 리포트 받기
+                  </>
+                )}
+              </button>
+
+              <button 
+                onClick={handleDownloadThumbnail} 
+                className="btn-secondary" 
+                disabled={pdfLoading || thumbnailLoading}
+                style={{ padding: '14px 10px', fontSize: '1rem', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(99, 102, 241, 0.15))', border: '1px solid rgba(236, 72, 153, 0.4)', color: '#fbcfe8' }}
+              >
+                {thumbnailLoading ? (
+                  <>
+                    <Compass className="animate-spin" size={18} /> 썸네일 이미지 렌더링 중...
+                  </>
+                ) : (
+                  <>
+                    <Camera size={18} /> 📸 인스타 릴스 썸네일 다운로드 (1080x1920)
+                  </>
+                )}
+              </button>
+            </div>
+
+            <ReelsThumbnail ref={thumbnailRef} result={result} />
 
             {/* 인스타 DM 요약 전송 섹션 */}
             <div className="dm-summary-section">

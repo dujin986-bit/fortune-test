@@ -661,3 +661,213 @@ p {
 .dm-copy-btn:hover .dm-copy-arrow {
   transform: translateX(4px);
 }
+
+/* ==========================================================
+   인스타 릴스 썸네일 전용 MZ 스타일 CSS (1080x1920 기준)
+   ========================================================== */
+
+.reels-thumbnail-wrapper {
+  /* 화면상에서 축소되어 미리보기로 보이도록 flex 정렬용 */
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.reels-thumbnail-container {
+  width: 1080px;
+  height: 1920px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #31114b 100%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Pretendard', sans-serif;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 100px;
+}
+
+/* 감각적인 백그라운드 블랍(Blob) 효과 */
+.reels-bg-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.reels-bg-elements .blob-1 {
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.4) 0%, rgba(236,72,153,0) 70%);
+  top: -100px;
+  left: -200px;
+  border-radius: 50%;
+  filter: blur(80px);
+}
+
+.reels-bg-elements .blob-2 {
+  position: absolute;
+  width: 900px;
+  height: 900px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(99,102,241,0) 70%);
+  bottom: -200px;
+  right: -300px;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+/* 컨텐츠 래퍼 */
+.reels-content {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+}
+
+/* 상단 헤더 */
+.reels-header {
+  text-align: center;
+  margin-top: 150px;
+}
+
+.reels-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 16px 40px;
+  border-radius: 100px;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #fbcfe8;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 40px;
+  box-shadow: 0 0 40px rgba(236, 72, 153, 0.3);
+}
+
+.reels-title {
+  font-size: 5.5rem;
+  line-height: 1.3;
+  font-weight: 800;
+  margin: 0;
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.highlight-text {
+  background: linear-gradient(to right, #fb7185, #f472b6, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+/* 중앙 글래스모피즘 사주 카드 */
+.reels-glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 60px;
+  padding: 80px;
+  margin: auto 0;
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4), inset 0 0 0 2px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+.reels-saju-circle {
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.4);
+  border: 6px solid rgba(255,255,255,0.2);
+}
+
+.reels-data-rows {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.reels-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 30px;
+  border-bottom: 2px solid rgba(255,255,255,0.1);
+}
+.reels-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.row-label {
+  font-size: 2.8rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.row-value {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.highlight-score {
+  color: #a7f3d0;
+  text-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+}
+
+/* 하단 DM 유도 */
+.reels-footer {
+  margin-bottom: 100px;
+  width: 100%;
+}
+
+.dm-prompt {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(99, 102, 241, 0.2));
+  border: 3px solid rgba(255,255,255,0.2);
+  border-radius: 40px;
+  padding: 50px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+
+.dm-icon {
+  font-size: 6rem;
+}
+
+.dm-text {
+  font-size: 2.8rem;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.dm-text strong {
+  font-size: 3.5rem;
+  color: #fff;
+  background: linear-gradient(to right, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
