@@ -13,11 +13,12 @@ const ReelsThumbnail = forwardRef<HTMLDivElement, ReelsThumbnailProps>(({ result
   const luckyDir = result.fengShui.luckyDirections[0]?.split(' ')[0] || '동남쪽';
 
   return (
-    // 화면상에 작게 미리보기로 표시되도록 scale 조정 (가로 1080 -> 약 320px)
-    <div className="reels-thumbnail-wrapper" style={{ transform: 'scale(0.3)', transformOrigin: 'top center', height: '580px', marginBottom: '20px' }}>
+    // 화면상에 작게 미리보기로 표시되도록 scale 조정 (가로 1080 -> 약 324px)
+    <div className="reels-thumbnail-wrapper" style={{ height: '580px', marginBottom: '20px', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
       <div 
         ref={ref}
         className="reels-thumbnail-container"
+        style={{ transform: 'scale(0.3)', transformOrigin: 'top center' }}
       >
         <div className="reels-bg-elements">
           <div className="bg-blob blob-1"></div>
