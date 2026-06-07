@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Compass, Sparkles, Download, MessageSquare, ArrowRight, RefreshCw, Copy, Camera } from 'lucide-react';
+import { Compass, Sparkles, Download, MessageSquare, ArrowRight, RefreshCw, Copy } from 'lucide-react';
 import { calculateDestiny } from './utils/astrologyCalculator';
 import type { DestinyResult } from './utils/astrologyCalculator';
 import { generatePDFReport } from './utils/pdfGenerator';
-import ReelsThumbnail from './components/ReelsThumbnail';
-import html2canvas from 'html2canvas';
 interface CustomerDBItem {
   name: string;
   gender?: 'M' | 'F';
@@ -152,8 +150,6 @@ function App() {
   // 결과 상태
   const [result, setResult] = useState<DestinyResult | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [thumbnailLoading, setThumbnailLoading] = useState(false);
-  const thumbnailRef = useRef<HTMLDivElement>(null);
 
   // 시간 목록 (시주 계산용)
   const HOURS = Array.from({ length: 24 }, (_, i) => ({
@@ -221,29 +217,7 @@ function App() {
     }
   };
 
-  const handleDownloadThumbnail = async () => {
-    if (!thumbnailRef.current) return;
-    setThumbnailLoading(true);
 
-    try {
-      const canvas = await html2canvas(thumbnailRef.current, {
-        scale: 2, // 고해상도 지원
-        useCORS: true,
-        backgroundColor: null,
-      });
-      
-      const image = canvas.toDataURL('image/png', 1.0);
-      const link = document.createElement('a');
-      link.download = `${result?.name}_6월_문서운_릴스_썸네일.png`;
-      link.href = image;
-      link.click();
-    } catch (err) {
-      console.error('썸네일 생성 실패:', err);
-      alert('썸네일 이미지 생성 중 오류가 발생했습니다.');
-    } finally {
-      setThumbnailLoading(false);
-    }
-  };
 
   const handleDownloadCSV = () => {
     try {
@@ -775,43 +749,22 @@ ${interiorTips}
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button 
-                onClick={handleDownloadPDF} 
-                className="btn-primary" 
-                disabled={pdfLoading || thumbnailLoading}
-                style={{ padding: '14px 10px', fontSize: '1rem' }}
-              >
-                {pdfLoading ? (
-                  <>
-                    <Compass className="animate-spin" size={18} /> 폰트 다운로드 및 PDF 생성 중...
-                  </>
-                ) : (
-                  <>
-                    <Download size={18} /> 상세 5p PDF 리포트 받기
-                  </>
-                )}
-              </button>
-
-              <button 
-                onClick={handleDownloadThumbnail} 
-                className="btn-secondary" 
-                disabled={pdfLoading || thumbnailLoading}
-                style={{ padding: '14px 10px', fontSize: '1rem', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(99, 102, 241, 0.15))', border: '1px solid rgba(236, 72, 153, 0.4)', color: '#fbcfe8' }}
-              >
-                {thumbnailLoading ? (
-                  <>
-                    <Compass className="animate-spin" size={18} /> 썸네일 이미지 렌더링 중...
-                  </>
-                ) : (
-                  <>
-                    <Camera size={18} /> 📸 인스타 릴스 썸네일 다운로드 (1080x1920)
-                  </>
-                )}
-              </button>
-            </div>
-
-            <ReelsThumbnail ref={thumbnailRef} result={result} />
+            <button 
+              onClick={handleDownloadPDF} 
+              className="btn-primary" 
+              disabled={pdfLoading}
+              style={{ padding: '14px 10px', fontSize: '1rem' }}
+            >
+              {pdfLoading ? (
+                <>
+                  <Compass className="animate-spin" size={18} /> 폰트 다운로드 및 PDF 생성 중...
+                </>
+              ) : (
+                <>
+                  <Download size={18} /> 상세 5p PDF 리포트 받기
+                </>
+              )}
+            </button>
 
             {/* 인스타 DM 요약 전송 섹션 */}
             <div className="dm-summary-section">
